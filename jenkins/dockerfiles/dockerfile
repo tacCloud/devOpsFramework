@@ -53,6 +53,19 @@ WORKDIR ${HOME}
 RUN chmod -R 777 ${AGENT_WORKDIR}
 RUN chmod -R 777 ${HOME}/
 
+
+#Install golang
+WORKDIR ${HOME}/go_build
+RUN curl -L -O https://golang.org/dl/go1.15.8.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.15.8.linux-amd64.tar.gz
+
+WORKDIR ${HOME}
+
+RUN apt-get install -y gcc
+
+RUN rm -rf ${HOME}/go_build
+RUN rm -rf /var/lib/apt/lists/*
+
 ENTRYPOINT ["/usr/local/bin/jenkins-slave"]
 
 # DOCKER_BUILDKIT=0 docker build . -t rmccabe3701/jenkins-slave
