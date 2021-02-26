@@ -59,3 +59,74 @@ node('jenkins-slave') {
     }
 }
 ```
+
+
+ISSUE:
+ * Cannot run golang in the master jenkins pod (something about Alpine not being able to run glibc programs)
+
+
+HOWTO:
+
+* Connect an "always-on" Jenkins slave (Connect to docker-slave via ssh)
+
+```bash
+#Launch Jenkins via Docker (not sure how to connect to docker image from k8s)
+#NOTE: cannot launch docker containers directly from Jenkins as it doesn't run as root :(
+docker run -i --rm --name jenkins-master -v /Users/rjmccabe/repos/k8s_demo/jenkins_storage:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -p 8080:8080 -p 50000 \
+  jenkins/jenkins:2.235.1-lts-alpine
+
+#Launch the slave (this runs sshd)
+docker run -i --rm --name jenkins-slave-docker \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+   bibinwilson/jenkins-slave:latest
+
+Then add the node in the Jenkins WebUi
+```
+
+* Add a dynamic worker (that does golint, gotest, builds image and pushes)
+
+cd dockerfiles
+docker build -t rmccabe3701/jenkins-slave .
+docker push rmccabe3701/jenkins-slave
+
+
+docker run -i --rm --name jenkins-slave-docker \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+   rmccabe3701/jenkins-slave:latest
+
+
+Set DOCKER_USERNAME and DOCKER_PASSWORD as credentials (secret text) in Jenkins WebUI
+
+
+Interesting webapp (and fluentd logging):
+https://github.com/chrisvugrinec/aks-logging/tree/master/got-webapp
+
+TODO:
+
+ * Figure out how to connect a docker Jenkins slave:
+ docker run -i --rm --name agent --init jenkins/agent java -jar /usr/share/jenkins/agent.jar
+  (not sure how to connect with a Docker container from a kubernetes pod)
+
+#NOTE: cannot launch docker containers directly from Jenkins as it doesn't run as root :(
+ docker run -i --rm --name jenkins-master -v /Users/rjmccabe/repos/k8s_demo/jenkins_storage:/var/jenkins_home \
+   -v /var/run/docker.sock:/var/run/docker.sock \
+   -p 8080:8080 -p 50000 \
+   jenkins/jenkins:2.235.1-lts-alpine
+
+ docker run -i --rm --name agent \
+   -v /var/run/docker.sock:/var/run/docker.sock \
+   --init jenkins/agent java -jar /usr/share/jenkins/agent.jar
+
+ docker run -i --rm --name agent \
+   -v /var/run/docker.sock:/var/run/docker.sock \
+   --init jenkins/agent java -jar /usr/share/jenkins/agent.jar
+
+ docker run -i --rm --name jenkins-slave-docker \
+   -v /var/run/docker.sock:/var/run/docker.sock \
+    bibinwilson/jenkins-slave:latest
+
+ * Run some golang lint/tests in the pipeline
+
+ * build the docker image and push to dockerhub (credentials?)

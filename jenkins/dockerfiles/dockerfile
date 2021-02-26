@@ -1,6 +1,6 @@
 FROM openjdk:8-jdk
 
-RUN apt-get update -y && apt-get install -y curl sudo
+RUN apt-get update -y && apt-get install -y curl sudo jq
 
 #Install docker
 RUN curl -sSL https://get.docker.com/ | sh
